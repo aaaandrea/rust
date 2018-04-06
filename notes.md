@@ -148,30 +148,30 @@ In Rust, variables are immutable by default, so we call them `variable bindings`
 
 Rust is a statically-typed language. It checks the data type at compile time, but does not require you to type it when declaring variable bindings. In that case, the compuler checks the usage, and sets a better data type for it. But for constants and statics you must annotate the type. Types come after a colon.
 
-- Variable bindings
-```
-let a = true;
-let b: bool = true;
+- **Variable bindings**
+    ```
+    let a = true;
+    let b: bool = true;
 
-let (x, y) = (1, 2);
+    let (x, y) = (1, 2);
 
-let mut z = 5;
-z = 6;
-```
-The `let` keyword is used in binding expressions. We can bind a name to a value || function. Also, because the left-hand side of a `let` expression is a "pattern", you can bind multiple names to set of values or function values.
+    let mut z = 5;
+    z = 6;
+    ```
+    The `let` keyword is used in binding expressions. We can bind a name to a value || function. Also, because the left-hand side of a `let` expression is a "pattern", you can bind multiple names to set of values or function values.
 
-- Constants
-```
-const N: i32 = 5;
-```
-The `const` keyword is used to define constants. It lives for the entire lifetime of a program, but has no fixed address in memory.
+- **Constants**
+    ```
+    const N: i32 = 5;
+    ```
+    The `const` keyword is used to define constants. It lives for the entire lifetime of a program, but has no fixed address in memory.
 
 
-- Statics
-```
-static N: i32 = 5;
-```
-`static` is used to define a "global variable" type facility. There is only one instance for each value, and it is at a fixed location in memory. Usually statics are placed on top of the code file, outside functions.
+- **Statics**
+    ```
+    static N: i32 = 5;
+    ```
+    `static` is used to define a "global variable" type facility. There is only one instance for each value, and it is at a fixed location in memory. Usually statics are placed on top of the code file, outside functions.
 
 
 NOTE: Always use `const` instead of `static`. It's pretty rare that you actually want a memory location associated with your constant, and using a `const` allows for optimizations like constant propagation not only in your crate, but also in downstream crates.
@@ -800,5 +800,64 @@ struct Electron;
 
 fn main() {
   let x = Electron;
+}
+```
+
+### Enums
+An `enum` is a single type. It contains variants, which are possible values of the enum at a given time.
+
+```
+enum Day {
+    Sunday,
+    Monday,
+    Tuesday,
+    Wednesday,
+    Thursday,
+    Friday,
+    Saturday
+}
+
+// Day is the enum
+// Sunday, Monday, etc. are the variants
+```
+
+Variants can be accessed through `::notation` eg `Day::Sunday`
+
+Each enum variant can have:
+    - No data (unit variant)
+    - unnamed ordered data (tuple variant)
+    - named data (struct variant)
+
+```
+enum FlashMessage {
+    Success, //a unit variant
+    Warning{ category: i32, message: String }, // a struct variant
+    Error(String) // a tuple variant
+}
+
+fn main() {
+    let mut form_status = FlashMessage::Success;
+    print_flash_message(form_status);
+
+    form_status = FlashMessage::Warning {category: 2, message: String::from("Field X is required")};
+    print_flash_message(form_status);
+
+    form_status = FlashMessage::Warning {category: 2, message: String::from("Field X is required")};
+    print_flash_message(form_status);
+
+    form_status = FlashMessage::Error(String::from("Connection Error"));
+    print_flash_message(form_status);
+}
+
+fn print_flash_message(m: FlashMessage) {
+    // pattern matching with enum
+    match m {
+        FlashMessage::Success =>
+            println!("Form Submitted correctly"),
+        Flash Message::Warning {category, message} => //Destructure, should use same field names
+            println!("Warning : {} - {}", category, message),
+        FlashMessage::Error(msg) =>
+            println!("Error: {}", msg)
+    }
 }
 ```
