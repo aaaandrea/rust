@@ -225,6 +225,7 @@ let c = b(5); //6
     ```
 
 - **i8, i16, i32, i64**: Fixed size(bit) signed(+/-) integer types
+
     | DATA TYPE | MIN                  | MAX                 |
     |-----------|----------------------|---------------------|
     | i8        | -128                 | 127                 |
@@ -236,6 +237,7 @@ let c = b(5); //6
 
 
 - **u8, u16, u32, u64**: Fixed size(bit) unsigned(+) integer types
+
     | DATA TYPE | MIN | MAX                  |
     |-----------|-----|----------------------|
     | u8        | 0   | 255                  |
