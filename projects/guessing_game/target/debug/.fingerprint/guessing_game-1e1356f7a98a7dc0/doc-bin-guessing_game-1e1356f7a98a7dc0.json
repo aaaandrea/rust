@@ -1,0 +1,1 @@
+{"rustc":18204830484536976040,"features":"[]","target":6035654596194783329,"profile":3262505376670074573,"path":1036222786711178230,"deps":[["rand v0.3.22",15621722303549414276],["rand v0.3.22",14027212827861906212]],"local":[{"Precalculated":"1523893459.194242348s (/Users/andreadelrio/rust/projects/guessing_game/src/main.rs)"}],"rustflags":[],"epoch":"Epoch2015"}
