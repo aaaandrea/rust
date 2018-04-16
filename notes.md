@@ -861,3 +861,8 @@ fn print_flash_message(m: FlashMessage) {
     }
 }
 ```
+
+### Generics
+Sometimes, when writing a function or datra type, we may want it to work for multiple types. In this case we use `generics`
+
+The concept is, instead of declaring a specific data type, we use an uppercase letter
