@@ -574,6 +574,70 @@ let is_below_eighteen = if team_size < 18 { true } else { false };
 
 NOTE: Return data type should be the same on each block, when using this as an expression
 
+##### Using `if` in a `let` statement
+Because if is an expression, we can use it on the right side of a let statement, for instance in Listing 3-2:
+
+Filename: src/main.rs
+```
+fn main() {
+    let condition = true;
+    let number = if condition {
+        5
+    } else {
+        6
+    };
+
+    println!("The value of number is: {}", number);
+}
+```
+Listing 3-2: Assigning the result of an if expression to a variable
+
+The number variable will be bound to a value based on the outcome of the if expression. Run this code to see what happens:
+
+```
+$ cargo run
+   Compiling branches v0.1.0 (file:///projects/branches)
+    Finished dev [unoptimized + debuginfo] target(s) in 0.30 secs
+     Running `target/debug/branches`
+The value of number is: 5
+```
+
+Remember that blocks of code evaluate to the last expression in them, and numbers by themselves are also expressions. In this case, the value of the whole if expression depends on which block of code executes. This means the values that have the potential to be results from each arm of the if must be the same type; in Listing 3-2, the results of both the if arm and the else arm were i32 integers. If the types are mismatched, as in the following example, we’ll get an error:
+
+Filename: src/main.rs
+
+```
+fn main() {
+    let condition = true;
+
+    let number = if condition {
+        5
+    } else {
+        "six"
+    };
+
+    println!("The value of number is: {}", number);
+}
+```
+When we try to run this code, we’ll get an error. The if and else arms have value types that are incompatible, and Rust indicates exactly where to find the problem in the program:
+
+```
+error[E0308]: if and else have incompatible types
+ --> src/main.rs:4:18
+  |
+4 |       let number = if condition {
+  |  __________________^
+5 | |         5
+6 | |     } else {
+7 | |         "six"
+8 | |     };
+  | |_____^ expected integral variable, found reference
+  |
+  = note: expected type `{integer}`
+             found type `&str`
+```
+The expression in the if block evaluates to an integer, and the expression in the else block evaluates to a string. This won’t work because variables must have a single type. Rust needs to know at compile time what type the number variable is, definitively, so it can verify at compile time that its type is valid everywhere we use number. Rust wouldn’t be able to do that if the type of number was only determined at runtime; the compiler would be more complex and would make fewer guarantees about the code if it had to keep track of multiple hypothetical types for any variable.
+
 #### match
 ```
 let tshirt_width = 20;
@@ -1052,7 +1116,7 @@ This expression:
 is a block that, in this case, evaluates to 4. That value gets bound to y as part of the let statement. Note the x + 1 line without a semicolon at the end, unlike most of the lines you’ve seen so far. Expressions do not include ending semicolons. If you add a semicolon to the end of an expression, you turn it into a statement, which will then not return a value. Keep this in mind as you explore function return values and expressions next.
 
 ##### Return Values
-Functions can return values to the code that calls them. We don’t name return values, but we do declare their type after an arrow (->). In Rust, the return value of the function is synonymous with the value of the final expression in the block of the body of a function. You can return early from a function by using the return keyword and specifying a value, but most functions return the last expression implicitly. Here’s an example of a function that returns a value:
+Functions can return values to the code that calls them. We don’t name return values, but we do declare their type after an arrow (`->`). In Rust, the return value of the function is synonymous with the value of the final expression in the block of the body of a function. You can return early from a function by using the return keyword and specifying a value, but most functions return the last expression implicitly. Here’s an example of a function that returns a value:
 
 Filename: src/main.rs
 
