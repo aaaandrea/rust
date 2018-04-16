@@ -208,6 +208,24 @@ let c = b(5); //6
 ```
 
 ### Primitive Data Types
+Each signed variant can store numbers from `-(2n - 1)` to `2n - 1 - 1` inclusive, where n is the number of bits that variant uses. So an i8 can store numbers from `-(27)` to `27 - 1`, which equals `-128` to `127`. Unsigned variants can store numbers from `0` to `2n - 1`, so a u8 can store numbers from `0` to `28 - 1`, which equals `0` to `255`.
+
+Additionally, the `isize` and `usize` types depend on the kind of computer your program is running on: 64-bits if you’re on a 64-bit architecture and 32-bits if you’re on a 32-bit architecture.
+
+You can write integer literals in any of the forms shown in Table 3-2. Note that all number literals except the byte literal allow a type suffix, such as `57u8`, and `_` as a visual separator, such as `1_000`.
+
+| Number literals | Example     |
+|-----------------|-------------|
+| Decimal         | 98_222      |
+| Hex             | 0xff        |
+| Octal           | 0o77        |
+| Binary          | 0b1111_0000 |
+| Byte (u8 only)  | b'A'        |
+
+So how do you know which type of integer to use? If you’re unsure, Rust’s defaults are generally good choices, and integer types default to `i32`: it’s generally the fastest, even on 64-bit systems. The primary situation in which you’d use isize or usize is when indexing some sort of collection.
+
+Rust also has two primitive types for floating-point numbers, which are numbers with decimal points. Rust’s floating-point types are `f32` and `f64`, which are 32 bits and 64 bits in size, respectively. The default type is `f64` because on modern CPUs it’s roughly the same speed as f32 but is capable of more precision.The `f32` type is a single-precision float, and `f64` has double precision.
+
 - **bool**: true or false
     ```
     let x = true;
@@ -216,6 +234,7 @@ let c = b(5); //6
     ```
 
 - **char**: a single Unicode scalar value
+Rust’s char type represents a Unicode Scalar Value, which means it can represent a lot more than just ASCII. Accented letters, Chinese/Japanese/Korean ideographs, emoji, and zero width spaces are all valid char types in Rust. Unicode Scalar Values range from U+0000 to U+D7FF and U+E000 to U+10FFFF inclusive. However, a “character” isn’t really a concept in Unicode, so your human intuition for what a “character” is may not match up with what a char is in Rust. We’ll discuss this topic in detail in the “Strings” section in Chapter 8.
     ```
     let x = 'x';
     let y = '😎';
@@ -234,6 +253,7 @@ let c = b(5); //6
     | i64       | -9223372036854775808 | 9223372036854775807 |
 
     NOTE: min and max values are based on IEEE standard for Binary Floating-Point Arithmetic. From -2ⁿ⁻¹ to 2ⁿ⁻¹-1. You can use `min_value()` and `max_value()` to find the min and max of each integer type. eg. `i9::min_value();`
+
 
 
 - **u8, u16, u32, u64**: Fixed size(bit) unsigned(+) integer types
@@ -344,10 +364,27 @@ let a = 5;
 let b = a + 1; //6
 let c = a - 1; //4
 let d = a * 2; //10
-let e = a / 2; // ⭐️ 2 not 2.5
+let e = a / 2; // 2 not 2.5
 let f = a % 2; //1
 
 let g = 5.0 / 2.0; //2.5
+
+fn main() {
+    // addition
+    let sum = 5 + 10;
+
+    // subtraction
+    let difference = 95.5 - 4.3;
+
+    // multiplication
+    let product = 4 * 30;
+
+    // division
+    let quotient = 56.7 / 32.2;
+
+    // remainder
+    let remainder = 43 % 5;
+}
 ```
 
 NOTE: Also `+` is used for array and string concatenation
@@ -405,7 +442,9 @@ let g = a >> a; //0  (remove 2 positions from the end -> o̶1̶ -> 0)
 ```
 
 #### Assignment and Compound Assignment Operators
-The = operator is used to assign a name to a value or a function. Compound Assignment Operators are created by composing one of `+ - * / % & | ^ << >>` operators with `=` operator.
+The = operator is used to assign a name to a value or a function. Compound Assignment Operators are created by composing one of `+ - * / % & | ^ << >>` operators with `=` operator
+
+Compound types can group multiple values of other types into one type. Rust has two primitive compound types: tuples and arrays.
 
 ```
 let mut a = 2;
@@ -422,6 +461,62 @@ a ^= 2; //111 != 010 -> 101 -> 5
 a <<= 1; //'101'+'0' -> 1010 -> 10
 a >>= 2; //101̶0̶ -> 10 -> 2
 ```
+
+##### Grouping Values into Tuples
+A tuple is a general way of grouping together  some number of other values with a variety of types into one compound type.
+
+```
+fn main() {
+    let tup: (i32, f64, u8) = (500, 6.4, 1);
+}
+```
+
+To get the individual values out of a tuple, we can use pattern matching to destructure a tuple value, like this:
+```
+fn main() {
+    let tup = (500, 6.4, 1);
+    let (x, y, z) = tup;
+    println!("The value of y is: {}", y);
+}
+```
+
+In addition to destructuring through pattern matching, we can also access a tuple element directly by using a period (.) followed by the index of the value we want to access. For example:
+
+```
+fn main() {
+    let x: (i32, f64, u8) = (500, 6.4, 1);
+    let five_hundred = x.0;
+    let six_point_four = x.1;
+    let one = x.2;
+}
+```
+
+##### Arrays
+Unlike a tuple, every element of an array must have the same type. Arrays in Rust are different than arrays in some other languages because arrays in Rust have a fixed length: once declared, they cannot grow or shrink in size.
+
+```
+fn main() {
+    let a = [1, 2, 3, 4, 5];
+}
+```
+
+###### Accessing Array Elements
+An array is a single chunk of memory allocated on the stack. We can access elements of an array using indexing, like this:
+
+Filename: src/main.rs
+
+```
+fn main() {
+    let a = [1, 2, 3, 4, 5];
+
+    let first = a[0];
+    let second = a[1];
+}
+```
+
+In this example, the variable named first will get the value 1, because that is the value at index [0] in the array. The variable named second will get the value 2 from index [1] in the array.
+
+
 #### Type Casting Operator
 
 ```
@@ -863,6 +958,6 @@ fn print_flash_message(m: FlashMessage) {
 ```
 
 ### Generics
-Sometimes, when writing a function or datra type, we may want it to work for multiple types. In this case we use `generics`
+Sometimes, when writing a function or data type, we may want it to work for multiple types. In this case we use `generics`
 
 The concept is, instead of declaring a specific data type, we use an uppercase letter
