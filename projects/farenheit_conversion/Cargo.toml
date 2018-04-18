@@ -1,0 +1,6 @@
+[package]
+name = "farenheit_conversion"
+version = "0.1.0"
+authors = ["Andrea del Rio <adelrio@gmail.com>"]
+
+[dependencies]

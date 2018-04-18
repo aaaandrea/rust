@@ -1,0 +1,6 @@
+[package]
+name = "generate_fibs"
+version = "0.1.0"
+authors = ["Andrea del Rio <adelrio@gmail.com>"]
+
+[dependencies]
