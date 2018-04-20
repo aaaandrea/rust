@@ -3035,7 +3035,8 @@ mod network {
         fn connect() {
         }
     }
-}```
+}
+```
 
 
 Listing 7-4: Extracting the contents of the client module but leaving the declaration in src/lib.rs
@@ -3058,9 +3059,9 @@ fn connect() {
 }
 ```
 
-Note that we don’t need a mod declaration in this file because we already declared the client module with mod in src/lib.rs. This file just provides the contents of the client module. If we put a mod client here, we’d be giving the client module its own submodule named client!
+Note that we don’t need a mod declaration in this file because we already declared the client module with mod in `src/lib.rs`. This file just provides the contents of the client module. If we put a mod client here, we’d be giving the client module its own submodule named client!
 
-Rust only knows to look in src/lib.rs by default. If we want to add more files to our project, we need to tell Rust in src/lib.rs to look in other files; this is why mod client needs to be defined in src/lib.rs and can’t be defined in src/client.rs.
+Rust only knows to look in src/lib.rs by default. If we want to add more files to our project, we need to tell Rust in `src/lib.rs` to look in other files; this is why mod client needs to be defined in src/lib.rs and can’t be defined in src/client.rs.
 
 Now the project should compile successfully, although you’ll get a few warnings. Remember to use cargo build instead of cargo run because we have a library crate rather than a binary crate:
 
@@ -3104,7 +3105,7 @@ mod network;
 ```
 
 
-Then create a new src/network.rs file and enter the following:
+Then create a new `src/network.rs` file and enter the following:
 
 Filename: src/network.rs
 
@@ -3221,7 +3222,7 @@ In this example, we have three modules again: client, network, and network::clie
 
 Therefore, in order to extract a file for the network::client submodule of the network module, we needed to create a directory for the network module instead of a src/network.rs file. The code that is in the network module then goes into the src/network/mod.rs file, and the submodule network::client can have its own src/network/client.rs file. Now the top-level src/client.rs is unambiguously the code that belongs to the client module.
 
-Rules of Module Filesystems
+##### Rules of Module Filesystems
 Let’s summarize the rules of modules with regard to files:
 
 If a module named foo has no submodules, you should put the declarations for foo in a file named foo.rs.
@@ -3237,3 +3238,439 @@ These rules apply recursively, so if a module named foo has a submodule named ba
 The modules should be declared in their parent module’s file using the mod keyword.
 
 Next, we’ll talk about the pub keyword and get rid of those warnings!
+
+#### Controlling Visibility with pub
+We resolved the error messages shown in Listing 7-5 by moving the network and network::server code into the src/network/mod.rs and src/network/server.rs files, respectively. At that point, cargo build was able to build our project, but we still get warning messages about the client::connect, network::connect, and network::server::connect functions not being used:
+
+```
+warning: function is never used: `connect`
+ --> src/client.rs:1:1
+  |
+1 | / fn connect() {
+2 | | }
+  | |_^
+  |
+  = note: #[warn(dead_code)] on by default
+
+warning: function is never used: `connect`
+ --> src/network/mod.rs:1:1
+  |
+1 | / fn connect() {
+2 | | }
+  | |_^
+
+warning: function is never used: `connect`
+ --> src/network/server.rs:1:1
+  |
+1 | / fn connect() {
+2 | | }
+  | |_^
+```
+
+So why are we receiving these warnings? After all, we’re building a library with functions that are intended to be used by our users, not necessarily by us within our own project, so it shouldn’t matter that these connect functions go unused. The point of creating them is that they will be used by another project, not our own.
+
+To understand why this program invokes these warnings, let’s try using the connect library from another project, calling it externally. To do that, we’ll create a binary crate in the same directory as our library crate by making a src/main.rs file containing this code:
+
+Filename: src/main.rs
+
+```
+extern crate communicator;
+
+fn main() {
+    communicator::client::connect();
+}
+```
+
+We use the extern crate command to bring the communicator library crate into scope. Our package now contains two crates. Cargo treats src/main.rs as the root file of a binary crate, which is separate from the existing library crate whose root file is src/lib.rs. This pattern is quite common for executable projects: most functionality is in a library crate, and the binary crate uses that library crate. As a result, other programs can also use the library crate, and it’s a nice separation of concerns.
+
+From the point of view of a crate outside the communicator library looking in, all the modules we’ve been creating are within a module that has the same name as the crate, communicator. We call the top-level module of a crate the root module.
+
+Also note that even if we’re using an external crate within a submodule of our project, the extern crate should go in our root module (so in src/main.rs or src/lib.rs). Then, in our submodules, we can refer to items from external crates as if the items are top-level modules.
+
+Right now, our binary crate just calls our library’s connect function from the client module. However, invoking cargo build will now give us an error after the warnings:
+
+```
+error[E0603]: module `client` is private
+ --> src/main.rs:4:5
+  |
+4 |     communicator::client::connect();
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+```
+
+Ah ha! This error tells us that the client module is private, which is the crux of the warnings. It’s also the first time we’ve run into the concepts of public and private in the context of Rust. The default state of all code in Rust is private: no one else is allowed to use the code. If you don’t use a private function within your program, because your program is the only code allowed to use that function, Rust will warn you that the function has gone unused.
+
+After we specify that a function like client::connect is public, not only will our call to that function from our binary crate be allowed, but the warning that the function is unused will go away. Marking a function as public lets Rust know that the function will be used by code outside of our program. Rust considers the theoretical external usage that’s now possible as the function “being used.” Thus, when a function is marked public, Rust will not require that it be used in our program and will stop warning that the function is unused.
+
+Making a Function Public
+To tell Rust to make a function public, we add the pub keyword to the start of the declaration. We’ll focus on fixing the warning that indicates client::connect has gone unused for now, as well as the module `client` is private error from our binary crate. Modify src/lib.rs to make the client module public, like so:
+
+Filename: src/lib.rs
+
+```
+pub mod client;
+
+mod network;
+The pub keyword is placed right before mod. Let’s try building again:
+
+
+error[E0603]: function `connect` is private
+ --> src/main.rs:4:5
+  |
+4 |     communicator::client::connect();
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+```
+
+Hooray! We have a different error! Yes, different error messages are a cause for celebration. The new error shows function `connect` is private, so let’s edit src/client.rs to make client::connect public too:
+
+Filename: src/client.rs
+
+
+```
+pub fn connect() {
+}
+Now run cargo build again:
+
+
+warning: function is never used: `connect`
+ --> src/network/mod.rs:1:1
+  |
+1 | / fn connect() {
+2 | | }
+  | |_^
+  |
+  = note: #[warn(dead_code)] on by default
+
+warning: function is never used: `connect`
+ --> src/network/server.rs:1:1
+  |
+1 | / fn connect() {
+2 | | }
+  | |_^
+```
+
+The code compiled, and the warning about client::connect not being used is gone!
+
+Unused code warnings don’t always indicate that an item in your code needs to be made public: if you didn’t want these functions to be part of your public API, unused code warnings could be alerting you to code you no longer need that you can safely delete. They could also be alerting you to a bug if you had just accidentally removed all places within your library where this function is called.
+
+But in this case, we do want the other two functions to be part of our crate’s public API, so let’s mark them as pub as well to get rid of the remaining warnings. Modify src/network/mod.rs to look like the following:
+
+Filename: src/network/mod.rs
+```
+
+pub fn connect() {
+}
+
+mod server;
+Then compile the code:
+
+
+warning: function is never used: `connect`
+ --> src/network/mod.rs:1:1
+  |
+1 | / pub fn connect() {
+2 | | }
+  | |_^
+  |
+  = note: #[warn(dead_code)] on by default
+
+warning: function is never used: `connect`
+ --> src/network/server.rs:1:1
+  |
+1 | / fn connect() {
+2 | | }
+  | |_^
+```
+Hmmm, we’re still getting an unused function warning, even though network::connect is set to pub. The reason is that the function is public within the module, but the network module that the function resides in is not public. We’re working from the interior of the library out this time, whereas with client::connect we worked from the outside in. We need to change src/lib.rs to make network public too, like so:
+
+Filename: src/lib.rs
+
+```
+pub mod client;
+
+pub mod network;
+```
+
+Now when we compile, that warning is gone:
+
+```
+warning: function is never used: `connect`
+ --> src/network/server.rs:1:1
+  |
+1 | / fn connect() {
+2 | | }
+  | |_^
+  |
+  = note: #[warn(dead_code)] on by default
+```
+
+Only one warning is left! Try to fix this one on your own!
+
+##### Privacy Rules
+Overall, these are the rules for item visibility:
+
+If an item is public, it can be accessed through any of its parent modules.
+If an item is private, it can be accessed only by its immediate parent module and any of the parent’s child modules.
+Privacy Examples
+Let’s look at a few more privacy examples to get some practice. Create a new library project and enter the code in Listing 7-6 into your new project’s src/lib.rs:
+
+Filename: src/lib.rs
+
+```
+mod outermost {
+    pub fn middle_function() {}
+
+    fn middle_secret_function() {}
+
+    mod inside {
+        pub fn inner_function() {}
+
+        fn secret_function() {}
+    }
+}
+
+fn try_me() {
+    outermost::middle_function();
+    outermost::middle_secret_function();
+    outermost::inside::inner_function();
+    outermost::inside::secret_function();
+}
+```
+Listing 7-6: Examples of private and public functions, some of which are incorrect
+
+Before you try to compile this code, make a guess about which lines in the try_me function will have errors. Then, try compiling the code to see whether you were right, and read on for the discussion of the errors!
+
+Looking at the Errors
+The try_me function is in the root module of our project. The module named outermost is private, but the second privacy rule states that the try_me function is allowed to access the outermost module because outermost is in the current (root) module, as is try_me.
+
+The call to outermost::middle_function will work because middle_function is public, and try_me is accessing middle_function through its parent module outermost. We determined in the previous paragraph that this module is accessible.
+
+The call to outermost::middle_secret_function will cause a compilation error. middle_secret_function is private, so the second rule applies. The root module is neither the current module of middle_secret_function (outermost is), nor is it a child module of the current module of middle_secret_function.
+
+The module named inside is private and has no child modules, so it can only be accessed by its current module outermost. That means the try_me function is not allowed to call outermost::inside::inner_function or outermost::inside::secret_function.
+
+##### Fixing the Errors
+Here are some suggestions for changing the code in an attempt to fix the errors. Before you try each one, make a guess as to whether it will fix the errors, and then compile the code to see whether or not you’re right, using the privacy rules to understand why.
+
+- What if the inside module was public?
+- What if outermost was public and inside was private?
+- What if, in the body of inner_function, you called ::outermost::middle_secret_function()? (The two colons at the beginning mean that we want to refer to the modules starting from the root module.)
+- Feel free to design more experiments and try them out!
+
+Next, let’s talk about bringing items into scope with the use keyword.
+
+
+#### Referring to Names in Different Modules
+We’ve covered how to call functions defined within a module using the module name as part of the call, as in the call to the nested_modules function shown here in Listing 7-7:
+
+Filename: src/main.rs
+
+```
+pub mod a {
+    pub mod series {
+        pub mod of {
+            pub fn nested_modules() {}
+        }
+    }
+}
+
+fn main() {
+    a::series::of::nested_modules();
+}
+```
+
+Listing 7-7: Calling a function by fully specifying its enclosing module’s path
+
+As you can see, referring to the fully qualified name can get quite lengthy. Fortunately, Rust has a keyword to make these calls more concise.
+
+Bringing Names into Scope with the use Keyword
+Rust’s use keyword shortens lengthy function calls by bringing the modules of the function you want to call into scope. Here’s an example of bringing the a::series::of module into a binary crate’s root scope:
+
+Filename: src/main.rs
+
+```
+pub mod a {
+    pub mod series {
+        pub mod of {
+            pub fn nested_modules() {}
+        }
+    }
+}
+
+use a::series::of;
+
+fn main() {
+    of::nested_modules();
+}
+```
+
+The line use a::series::of; means that rather than using the full a::series::of path wherever we want to refer to the of module, we can use of.
+
+The use keyword brings only what we’ve specified into scope: it does not bring children of modules into scope. That’s why we still have to use of::nested_modules when we want to call the nested_modules function.
+
+We could have chosen to bring the function into scope by instead specifying the function in the use as follows:
+
+```
+pub mod a {
+    pub mod series {
+        pub mod of {
+            pub fn nested_modules() {}
+        }
+    }
+}
+
+use a::series::of::nested_modules;
+
+fn main() {
+    nested_modules();
+}
+```
+
+Doing so allows us to exclude all the modules and reference the function directly.
+
+Because enums also form a sort of namespace like modules, we can bring an enum’s variants into scope with use as well. For any kind of use statement, if you’re bringing multiple items from one namespace into scope, you can list them using curly brackets and commas in the last position, like so:
+
+```
+enum TrafficLight {
+    Red,
+    Yellow,
+    Green,
+}
+
+use TrafficLight::{Red, Yellow};
+
+fn main() {
+    let red = Red;
+    let yellow = Yellow;
+    let green = TrafficLight::Green;
+}
+```
+
+
+We’re still specifying the TrafficLight namespace for the Green variant because we didn’t include Green in the use statement.
+
+Bringing All Names into Scope with a Glob
+To bring all the items in a namespace into scope at once, we can use the * syntax, which is called the glob operator. This example brings all the variants of an enum into scope without having to list each specifically:
+
+```
+enum TrafficLight {
+    Red,
+    Yellow,
+    Green,
+}
+
+use TrafficLight::*;
+
+fn main() {
+    let red = Red;
+    let yellow = Yellow;
+    let green = Green;
+}
+```
+
+The * will bring into scope all the visible items in the TrafficLight namespace. You should use globs sparingly: they are convenient, but this might also pull in more items than you expected and cause naming conflicts.
+
+Using super to Access a Parent Module
+As we saw at the beginning of this chapter, when you create a library crate, Cargo makes a tests module for you. Let’s go into more detail about that now. In your communicator project, open src/lib.rs:
+
+Filename: src/lib.rs
+
+```
+pub mod client;
+
+pub mod network;
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        assert_eq!(2 + 2, 4);
+    }
+}
+```
+
+Chapter 11 explains more about testing, but parts of this example should make sense now: we have a module named tests that lives next to our other modules and contains one function named it_works. Even though there are special annotations, the tests module is just another module! So our module hierarchy looks like this:
+
+```
+communicator
+ ├── client
+ ├── network
+ |   └── client
+ └── tests
+```
+
+Tests are for exercising the code within our library, so let’s try to call our client::connect function from this it_works function, even though we won’t be checking any functionality right now. This won’t work yet:
+
+Filename: src/lib.rs
+
+
+```
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        client::connect();
+    }
+}
+```
+
+
+Run the tests by invoking the cargo test command:
+
+```
+$ cargo test
+   Compiling communicator v0.1.0 (file:///projects/communicator)
+error[E0433]: failed to resolve. Use of undeclared type or module `client`
+ --> src/lib.rs:9:9
+  |
+9 |         client::connect();
+  |         ^^^^^^ Use of undeclared type or module `client`
+```
+
+The compilation failed, but why? We don’t need to place communicator:: in front of the function like we did in src/main.rs because we are definitely within the communicator library crate here. The reason is that paths are always relative to the current module, which here is tests. The only exception is in a use statement, where paths are relative to the crate root by default. Our tests module needs the client module in its scope!
+
+So how do we get back up one module in the module hierarchy to call the client::connect function in the tests module? In the tests module, we can either use leading colons to let Rust know that we want to start from the root and list the whole path, like this:
+
+
+`::client::connect();`
+Or, we can use super to move up one module in the hierarchy from our current module, like this:
+
+
+`super::client::connect();`
+These two options don’t look that different in this example, but if you’re deeper in a module hierarchy, starting from the root every time would make your code lengthy. In those cases, using super to get from the current module to sibling modules is a good shortcut. Plus, if you’ve specified the path from the root in many places in your code and then you rearrange your modules by moving a subtree to another place, you’d end up needing to update the path in several places, which would be tedious.
+
+It would also be annoying to have to type super:: in each test, but you’ve already seen the tool for that solution: use! The super:: functionality changes the path you give to use so it is relative to the parent module instead of to the root module.
+
+For these reasons, in the tests module especially, use super::something is usually the best solution. So now our test looks like this:
+
+Filename: src/lib.rs
+
+
+```
+#[cfg(test)]
+mod tests {
+    use super::client;
+
+    #[test]
+    fn it_works() {
+        client::connect();
+    }
+}
+```
+
+When we run cargo test again, the test will pass and the first part of the test result output will be the following:
+
+```
+$ cargo test
+   Compiling communicator v0.1.0 (file:///projects/communicator)
+     Running target/debug/communicator-92007ddb5330fa5a
+
+running 1 test
+test tests::it_works ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+```
+
+#### Summary
+Now you know some new techniques for organizing your code! Use these techniques to group related functionality together, keep files from becoming too long, and present a tidy public API to your library users.
+
+Next, we’ll look at some collection data structures in the standard library that you can use in your nice, neat code!
