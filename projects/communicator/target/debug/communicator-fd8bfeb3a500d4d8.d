@@ -1,0 +1,1 @@
+/Users/andreadelrio/rust/projects/communicator/target/debug/communicator-fd8bfeb3a500d4d8.dSYM: /Users/andreadelrio/rust/projects/communicator/src/network/server.rs /Users/andreadelrio/rust/projects/communicator/src/client.rs /Users/andreadelrio/rust/projects/communicator/src/main.rs /Users/andreadelrio/rust/projects/communicator/src/network/mod.rs
