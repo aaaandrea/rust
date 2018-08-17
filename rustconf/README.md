@@ -53,19 +53,85 @@ Future of Rust
 
 
 ## Benchmarking and Optimization of Rust Libraries
-
-
-
-
-
+- Micro vs Macro benchmarking
+    - small unit vs customer workloads
+- cargo bench, leverages the test crate
+    - cargo-benchcmp allows for comparisons over time
+        - sensitive to thresholds
+    - nightly only
+- criterion.rs
+    - inspired by haskells criterion library
+    - nanosecond outputs graphs
+- Obtaining realistic workloads
+- use instrumentation to understand relatively expensive calls as well as high invocation functions - What is actually happening given certain inputs
+    - try Instruments.app on MacOS
+- Improving performance
+    - Fundamentals
+        - Early exit contidtions
+        - operational effitiancies
+        - parallelism
+        - eg. postgres - 3.14
+            - maybe chunk into groups of 3
+    - Don't clone to get around the borrow checker
+        - stack vs heap - consider the size of the data
+    - what about `unsafe`
+        - avoid
+        - generally not any better
 
 
 ## Getting Something for Nothing
+_embedded systems: how we cna teach the rust compiler to enforce what we want_
+- zero-cost abstractions is not new.
+- LLVM compiler backend
+- @![no_std] - where we are going we don't need OS
+- `rustup default stable`
+- `cargo build --target <name>`
+=> working microcontroller
+
+### Embedded Systems
+_computers you don't sit in front of_
+- combos of hardware<>software to do one thing well
+- peripherals -
+- hardware API - herding bits
+
+- using the borrow checker to track ownership and borrowing
+    - singleton pattern to be only one version of a class
+        - eg global mutable variable
+            - but with rust this would mean everything done with it would be unsafe
+        - INSTEAD write a struct called peripherals that writes an option and returns an option
+        - try rtfm that handles it for you in macros - japaric.io
+- why singletons make a difference
+    - its the reference to self
+    - if you have a reference to self, it forces you to pass the ownership and borrowing around
+        - enforces in the compiler, not at run time
+        - * only works in one application
+- type system
+    - `GPIOS` - general purpose input/output - smallest work for a microcontroller
+    - start with configure: input/output gpio
+
 
 ## The Dark Secrets Lurking inside `cargo doc`
 
-## The Opposite of Spaghetti Code
+
+
+
+
+
+## mentat
+
+
+
+
+
+
+
 
 ## Embedding Rust in C/C++
+
+
+
+
+
+
 
 ## C2Rust: Migrating Legacy Code to Rust
