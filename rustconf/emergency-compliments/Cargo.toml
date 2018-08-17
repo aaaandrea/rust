@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["Andrea del Rio <adelrio@gmail.com>"]
 
 [dependencies]
+simple-server = "0.3.0"
