@@ -337,3 +337,20 @@ preprocessor diretives
 
 
 ## Closing Keynote: How to build a game in Rust and What I can learn from it
+an answerL the design of a medium sized game engine
+- Rust makes certain patterns more painful than others, which is a good thing
+- The pstterns easiest for Rust are very often the easiest generally
+- I had to learn good patterns the hard way
+- For games, one of these is ECS design
+- Rust rewards data-oriented design with clear ownership
+
+- starting with a game
+    - simplest possible engine is a global mutable game state with 'systems'
+    - but then everything is in a global mutable megastate that can cause procedural issues eg mutating the physics state
+
+- improving the design poorly
+    - eg object oriented design
+        - with single responsibility principle
+        - encapsulation - lean towards privacy
+        - abstraction - rather than depending on a class, you should lean toward an abstract interface
+        - minimal coupling - dont couple things, only interact with these interaces
